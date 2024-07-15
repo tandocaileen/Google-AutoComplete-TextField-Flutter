@@ -1,6 +1,5 @@
 library google_places_flutter;
 
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -33,10 +32,12 @@ class GooglePlaceAutoCompleteTextField extends StatefulWidget {
   double? containerHorizontalPadding;
   double? containerVerticalPadding;
   FocusNode? focusNode;
+  final OnPredictionListChanged? onPredictionListChanged;
 
   GooglePlaceAutoCompleteTextField(
       {required this.textEditingController,
       required this.googleAPIKey,
+      this.onPredictionListChanged,
       this.debounceTime: 600,
       this.inputDecoration: const InputDecoration(),
       this.itemClick,
@@ -82,17 +83,14 @@ class _GooglePlaceAutoCompleteTextFieldState
             horizontal: widget.containerHorizontalPadding ?? 0,
             vertical: widget.containerVerticalPadding ?? 0),
         alignment: Alignment.centerLeft,
-        decoration: widget.boxDecoration ??
-            BoxDecoration(
-                shape: BoxShape.rectangle,
-                border: Border.all(color: Colors.grey, width: 0.6),
-                borderRadius: BorderRadius.all(Radius.circular(10))),
+        decoration: widget.boxDecoration,
         child: Row(
           mainAxisSize: MainAxisSize.max,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
               child: TextFormField(
+                autovalidateMode: AutovalidateMode.always,
                 decoration: widget.inputDecoration,
                 style: widget.textStyle,
                 controller: widget.textEditingController,
@@ -165,13 +163,20 @@ class _GooglePlaceAutoCompleteTextFieldState
         return;
       }
 
+      if (text.isEmpty) {
+        alPredictions.clear();
+        widget.onPredictionListChanged?.call(-1);
+        this._overlayEntry!.remove();
+        return;
+      }
+
       isSearched = false;
       alPredictions.clear();
       if (subscriptionResponse.predictions!.length > 0 &&
           (widget.textEditingController.text.toString().trim()).isNotEmpty) {
         alPredictions.addAll(subscriptionResponse.predictions!);
       }
-
+      widget.onPredictionListChanged?.call(alPredictions.length);
       this._overlayEntry = null;
       this._overlayEntry = this._createOverlayEntry();
       Overlay.of(context)!.insert(this._overlayEntry!);
@@ -255,12 +260,12 @@ class _GooglePlaceAutoCompleteTextFieldState
   Future<Response?> getPlaceDetailsFromPlaceId(Prediction prediction) async {
     //String key = GlobalConfiguration().getString('google_maps_key');
 
-    var url = "https://maps.googleapis.com/maps/api/place/details/json?placeid=${prediction.placeId}&key=${widget.googleAPIKey}";
+    var url =
+        "https://maps.googleapis.com/maps/api/place/details/json?placeid=${prediction.placeId}&key=${widget.googleAPIKey}";
     try {
       Response response = await _dio.get(
         url,
       );
-
 
       PlaceDetails placeDetails = PlaceDetails.fromJson(response.data);
 
@@ -268,8 +273,7 @@ class _GooglePlaceAutoCompleteTextFieldState
       prediction.lng = placeDetails.result!.geometry!.location!.lng.toString();
 
       widget.getPlaceDetailWithLatLng!(prediction);
-    }
-    catch(e){
+    } catch (e) {
       var errorHandler = ErrorHandler.internal().handleError(e);
       _showSnackBar("${errorHandler.message}");
     }
@@ -284,6 +288,7 @@ class _GooglePlaceAutoCompleteTextFieldState
     setState(() {
       alPredictions.clear();
       isCrossBtn = false;
+      widget.onPredictionListChanged?.call(alPredictions.length);
     });
 
     if (this._overlayEntry != null) {
@@ -325,3 +330,4 @@ typedef GetPlaceDetailswWithLatLng = void Function(
 
 typedef ListItemBuilder = Widget Function(
     BuildContext context, int index, Prediction prediction);
+typedef OnPredictionListChanged = void Function(int length);
