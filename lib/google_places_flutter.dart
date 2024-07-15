@@ -17,6 +17,7 @@ class GooglePlaceAutoCompleteTextField extends StatefulWidget {
   ItemClick? itemClick;
   GetPlaceDetailswWithLatLng? getPlaceDetailWithLatLng;
   bool isLatLngRequired = true;
+  double height;
 
   TextStyle textStyle;
   String googleAPIKey;
@@ -38,6 +39,7 @@ class GooglePlaceAutoCompleteTextField extends StatefulWidget {
       {required this.textEditingController,
       required this.googleAPIKey,
       this.onPredictionListChanged,
+      this.height = 0,
       this.debounceTime: 600,
       this.inputDecoration: const InputDecoration(),
       this.itemClick,
@@ -215,34 +217,37 @@ class _GooglePlaceAutoCompleteTextFieldState
                   link: this._layerLink,
                   offset: Offset(0.0, size.height + 5.0),
                   child: Material(
-                      child: ListView.separated(
-                    padding: EdgeInsets.zero,
-                    shrinkWrap: true,
-                    itemCount: alPredictions.length,
-                    separatorBuilder: (context, pos) =>
-                        widget.seperatedBuilder ?? SizedBox(),
-                    itemBuilder: (BuildContext context, int index) {
-                      return InkWell(
-                        onTap: () {
-                          var selectedData = alPredictions[index];
-                          if (index < alPredictions.length) {
-                            widget.itemClick!(selectedData);
+                      child: Container(
+                          height: widget.height,
+                          child: ListView.separated(
+                            padding: EdgeInsets.zero,
+                            shrinkWrap: true,
+                            itemCount: alPredictions.length,
+                            separatorBuilder: (context, pos) =>
+                                widget.seperatedBuilder ?? SizedBox(),
+                            itemBuilder: (BuildContext context, int index) {
+                              return InkWell(
+                                onTap: () {
+                                  var selectedData = alPredictions[index];
+                                  if (index < alPredictions.length) {
+                                    widget.itemClick!(selectedData);
 
-                            if (widget.isLatLngRequired) {
-                              getPlaceDetailsFromPlaceId(selectedData);
-                            }
-                            removeOverlay();
-                          }
-                        },
-                        child: widget.itemBuilder != null
-                            ? widget.itemBuilder!(
-                                context, index, alPredictions[index])
-                            : Container(
-                                padding: EdgeInsets.all(10),
-                                child: Text(alPredictions[index].description!)),
-                      );
-                    },
-                  )),
+                                    if (widget.isLatLngRequired) {
+                                      getPlaceDetailsFromPlaceId(selectedData);
+                                    }
+                                    removeOverlay();
+                                  }
+                                },
+                                child: widget.itemBuilder != null
+                                    ? widget.itemBuilder!(
+                                        context, index, alPredictions[index])
+                                    : Container(
+                                        padding: EdgeInsets.all(10),
+                                        child: Text(
+                                            alPredictions[index].description!)),
+                              );
+                            },
+                          ))),
                 ),
               ));
     }
