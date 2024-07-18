@@ -35,6 +35,7 @@ class GooglePlaceAutoCompleteTextField extends StatefulWidget {
   FocusNode? focusNode;
   final OnPredictionListChanged? onPredictionListChanged;
   final VoidCallback? onEditingComplete;
+  final Function(String)? onChanged;
 
   GooglePlaceAutoCompleteTextField(
       {required this.textEditingController,
@@ -56,6 +57,7 @@ class GooglePlaceAutoCompleteTextField extends StatefulWidget {
       this.containerHorizontalPadding,
       this.containerVerticalPadding,
       this.onEditingComplete,
+      this.onChanged,
       this.focusNode});
 
   @override
@@ -104,6 +106,7 @@ class _GooglePlaceAutoCompleteTextFieldState
                 controller: widget.textEditingController,
                 focusNode: widget.focusNode ?? FocusNode(),
                 onChanged: (string) {
+                  widget.onChanged?.call(string);
                   subject.add(string);
                   if (widget.isCrossBtnShown) {
                     isCrossBtn = string.isNotEmpty ? true : false;
@@ -125,7 +128,7 @@ class _GooglePlaceAutoCompleteTextFieldState
 
   getLocation(String text) async {
     String apiURL =
-        "https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$text&key=${widget.googleAPIKey}&locationrestriction=rectangle:10.2422552,23.7533688|10.4957531,124.0456450";
+        "https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$text&key=${widget.googleAPIKey}&locationrestriction=rectangle:10.2422552,123.7533688|10.4957531,124.0456450";
 
     if (widget.countries != null) {
       // in
@@ -224,7 +227,7 @@ class _GooglePlaceAutoCompleteTextFieldState
                   offset: Offset(0.0, size.height + 5.0),
                   child: Material(
                       child: Container(
-                          height: widget.height,
+                          height: alPredictions.length != 0 ? widget.height : 0,
                           child: ListView.separated(
                             padding: EdgeInsets.zero,
                             shrinkWrap: true,
