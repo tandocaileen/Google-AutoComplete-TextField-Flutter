@@ -13,6 +13,7 @@ import 'package:rxdart/rxdart.dart';
 import 'DioErrorHandler.dart';
 
 class GooglePlaceAutoCompleteTextField extends StatefulWidget {
+  bool isLoading = false; // Add this to track loading state
   InputDecoration inputDecoration;
   ItemClick? itemClick;
   GetPlaceDetailswWithLatLng? getPlaceDetailWithLatLng;
@@ -101,7 +102,14 @@ class _GooglePlaceAutoCompleteTextFieldState
                 },
                 onEditingComplete: widget.onEditingComplete,
                 autovalidateMode: AutovalidateMode.always,
-                decoration: widget.inputDecoration,
+                decoration: widget.inputDecoration?.copyWith(
+                  suffixIcon: widget.isLoading &&
+                          widget.textEditingController.text != ''
+                      ? Padding(
+                          padding: EdgeInsets.all(6),
+                          child: CircularProgressIndicator())
+                      : null,
+                ),
                 style: widget.textStyle,
                 controller: widget.textEditingController,
                 focusNode: widget.focusNode ?? FocusNode(),
@@ -127,6 +135,9 @@ class _GooglePlaceAutoCompleteTextFieldState
   }
 
   getLocation(String text) async {
+    setState(() {
+      widget.isLoading = true; // Set loading to true
+    });
     String apiURL =
         "https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$text&key=${widget.googleAPIKey}&locationrestriction=rectangle:10.2422552,123.7533688|10.4957531,124.0456450";
 
@@ -195,6 +206,9 @@ class _GooglePlaceAutoCompleteTextFieldState
       var errorHandler = ErrorHandler.internal().handleError(e);
       _showSnackBar("${errorHandler.message}");
     }
+    setState(() {
+      widget.isLoading = true; // Set loading to true
+    });
   }
 
   @override
